@@ -34,11 +34,11 @@ class Contains implements Query
 	}
 }
 
-class LongerThan implements Query
+class Length implements Query
 {
 	int length;
 
-	LongerThan(int length)
+	Length(int length)
 	{
 		this.length = length;
 	}
@@ -197,42 +197,181 @@ class Replace implements Transform
 	}
 }
 
+class FileHelper
+{
+    /**
+	 * Takes a path to a file and returns all of the lines in the
+	 * file as an array of strings, printing an error if it failed.
+	 *
+	 * @param path
+	 */
+    static String[] getLines(String path) {
+        try {
+            return Files.readAllLines(Paths.get(path)).toArray(String[]::new);
+        } catch (IOException ioe) {
+            System.err.println("Error reading file " + path + ": " + ioe);
+            return new String[] { "Error reading file " + path + ": " + ioe };
+        }
+    }
+}
+
 class StringSearch
 {
+	/**
+	 * Parses query and accordingly creates Query object for return
+	 *
+	 * @param query
+	 * @return parsedQuery
+	 */
 	public static Query parseQuery(String query)
 	{
 		String[] queryArray = query.split("=");
 		String keyword = queryArray[0];
 		String searchIndex = queryArray[1];
+		Query parsedQuery = null;
+		String errorMsg = "Invalid query";
 
 		switch (keyword)
 		{
 			case "contains":
+				parsedQuery = new Contains(searchIndex.substring(1, searchIndex.length() -1));
 				break;
 			case "length":
+				parsedQuery = new Length(Integer.parseInt(searchIndex));
 				break;
-			case "":
+			case "greater":
+				parsedQuery = new GreaterThan(Integer.parseInt(searchIndex));
 				break;
-			case "":
+			case "less":
+				parsedQuery = new LessThan(Integer.parseInt(searchIndex));
+				break;
+			case "starts":
+				parsedQuery = new StartsWith(searchIndex.substring(1, searchIndex.length() - 1));
+				break;
+			case "ends":
+				parsedQuery = new EndsWith(searchIndex.substring(1, searchIndex.length() - 1));
+				break;
+			case "not":
+				parsedQuery = new Not(parseQuery(query.substring(4, query.length() - 1)));
 				break;
 			default:
-				System.out.println();
+				break;
 		}
+
+		return parsedQuery;
+	}
+
+	/**
+	 * Returns false if non-matching element is found, otherwise true
+	 *
+	 * @param qArray
+	 * @param str
+	 * @return matchStatus
+	 */
+	public static boolean matchesAll(Query[] qArray, String str)
+	{
+		boolean matchStatus = false;
+
+		for (Query query : qArray)
+		{
+			if (!(query.matches(str)))
+			{
+				return matchStatus;
+			}
+		}
+
+		matchStatus = true;
+
+		return matchStatus;
+	}
+
+	/**
+	 * Parses transform, returns object accordingly
+	 *
+	 * @param transform
+	 * @return parsedTransform
+	 */
+	public static Transform parseTransform(String transform)
+	{
+		Transform parsedTransform = null;
+		
+		if (transform.contains("="))
+		{
+			String[] tArray = transform.split("=");
+			String transformation = tArray[0];
+			String index = tArray[1];
+
+			switch (transformation)
+			{
+				case "first":
+					parsedTransform = new FirstLetters(Integer.parseInt(index));
+					break;
+				case "last":
+					parsedTransform = new LastLetters(Integer.parseInt(index));
+					break;
+				case "replace":
+					parsedTransform = new Replace(transform.substring(9, transform.indexOf(";") - 1), transform.substring(transform.indexOf(";") + 2, transform.length() - 1));
+					break;
+			}
+		}
+		else if (transform.equals("upper"))
+		{
+			parsedTransform = new UpperCase();
+		}
+		else if (transform.equals("lower"))
+		{
+			parsedTransform = new LowerCase();
+		}
+
+		return parsedTransform;
+	}
+
+	/**
+	 * Applies transformations to string, returns transformed string
+	 *
+	 * @param transformations
+	 * @param str
+	 * @return str
+	 */
+	public static String applyTransformations(Transform[] transformations, String str)
+	{
+		for (Transform transformation : transformations)
+		{
+			str = transformation.transform(str);
+		}
+
+		return str;
 	}
 
 	public static void main(String[] args)
 	{
-		String filename = getFilename(args);
-		
-		String path = "./" + filename;
+		if (args.length == 1)
+		{
+			String filepath = "./" + args[0];
 
+			String[] lines = getLines(filepath);
+
+			for (String line : lines)
+			{
+				System.out.println(line);
+			}
+		}
+		if (args.length == 2)
+		{
+			String query = args[1];
+
+		}
+
+		if (args.length == 3)
+		{
+			String transform = args[2];
+		}
 //		System.out.println("path: " + path);
 		
 		String query = getQuery(args);
 
 		String transform = getTransform(args);
 
-		String[] lines = getLines(path);
 
 		System.out.println(filename + ":");
 
@@ -249,27 +388,14 @@ class StringSearch
 */
 	}
 
-	static String getFilename(String[] args)
-	{
-		return args[0];
-	}
-
 	static String getQuery(String[] args)
 	{
-		if (args.length > 1)
-		{
-			return args[1];
-		}
 		
 		return "";
 	}
 
 	static String getTransform(String[] args)
 	{
-		if (args.length > 2)
-		{
-			return args[2];
-		}
 
 		return "";
 	}
