@@ -205,7 +205,19 @@ class StringSearch
 		String keyword = queryArray[0];
 		String searchIndex = queryArray[1];
 
-
+		switch (keyword)
+		{
+			case "contains":
+				break;
+			case "length":
+				break;
+			case "":
+				break;
+			case "":
+				break;
+			default:
+				System.out.println();
+		}
 	}
 
 	public static void main(String[] args)
