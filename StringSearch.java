@@ -356,48 +356,107 @@ class StringSearch
 				System.out.println(line);
 			}
 		}
-		if (args.length == 2)
+		else if (args.length == 2)
 		{
+			String filepath = "./" + args[0];
 			String query = args[1];
+			String[] queries = query.split("&");
+			String[] lines = getLines(filepath);
+			Query qObj;
 
+			for (String line : lines)
+			{
+				if (queries.length == 1)
+				{
+					qObj = parseQuery(query);
+
+					if (qObj.matches(line))
+					{
+						System.out.println(line);
+					}
+				}
+				else if (queries.length > 1)
+				{
+					Query[] newQArray = new Query[queries.length];
+
+					for (int i = 0; i < queries.length; i++)
+					{
+						newQArray[i] = parseQuery(queries[i]);
+					}
+
+					if (matchesAll(newQArray, line))
+					{
+						System.out.println(line);
+					}
+				}
+			}
 		}
-
-		if (args.length == 3)
+		else if (args.length == 3)
 		{
+			String filepath = "./" + args[0];
+			String query = args[1];
 			String transform = args[2];
+			String[] queries = query.split("&");
+			String[] transformations = transform.split("&");
+			String[] lines = getLines(filepath);
+			Query qObj;
+
+			for (String line : lines)
+			{
+				if ((queries.length == 1) && (transformations.length== 1))
+				{
+					Transform tObj = parseTransform(transform);
+					qObj = parseQuery(query);
+
+					if (qObj.matches(line))
+					{
+						String lineOut = tObj.transform(line);
+						System.out.println(lineOut);
+					}
+				}
+				else if ((queries.length) == 1 && (transformations.length > 1))
+				{
+					Transform[] newTArray = new Transform[transformations.length];
+
+					for (int i = 0; i < transformations.length; i++)
+					{
+						Transform tObj = parseTransform(transformations[i]);
+					}
+
+					qObj = parseQuery(query);
+
+					if (qObj.matches(line))
+					{
+						String lineOut = applyTransformations(newTArray, line);
+						System.out.println(lineOut);
+					}
+				}
+				else if ((queries.length > 1) && (transformations.length > 1))
+				{
+					Query[] newQArray = new Query[queries.length];
+					Transform[] newTArray = new Transform[transformations.length];
+
+					for (int i = 0; i < queries.length; i++)
+					{
+						qObj = parseQuery(queries[i]);
+						newQArray[i] = qObj;
+					}
+
+					for (int i = 0; i < transformations.length; i++)
+					{
+						Transform tObj = parseTransform(transformations[i]);
+						newTArray[i] = tObj;
+					}
+
+					if (matchesAll(newQArray, line))
+					{
+						String lineOut = applyTransformations(newTArray, line);
+
+						System.out.println(lineOut);
+					}
+				}
+			}
 		}
-//		System.out.println("path: " + path);
-		
-		String query = getQuery(args);
-
-		String transform = getTransform(args);
-
-
-		System.out.println(filename + ":");
-
-		for (String word : lines)
-		{
-			System.out.println(word);
-		}
-
-//		System.out.println("contents: " + contents);
-/*
-		System.out.println("filename: " + filename);
-		System.out.println("query: " + query);
-		System.out.println("transform: " + transform);
-*/
-	}
-
-	static String getQuery(String[] args)
-	{
-		
-		return "";
-	}
-
-	static String getTransform(String[] args)
-	{
-
-		return "";
 	}
 
 	static String[] getLines(String path)
@@ -415,9 +474,4 @@ class StringSearch
 	}
 	
 }
-/*
-class FileHelper
-{
-	static String
-}
-*/
+
